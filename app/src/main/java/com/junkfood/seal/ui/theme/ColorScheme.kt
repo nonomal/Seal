@@ -1,75 +1,181 @@
 package com.junkfood.seal.ui.theme
 
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
-import com.junkfood.seal.ui.color.scheme.Scheme
-import com.junkfood.seal.ui.color.scheme.Scheme.dark
+import com.junkfood.seal.ui.common.LocalDarkTheme
+import com.junkfood.seal.ui.common.LocalFixedColorRoles
+import com.kyant.monet.TonalPalettes
+import com.kyant.monet.TonalPalettes.Companion.toTonalPalettes
+import io.material.hct.Hct
 
-object ColorScheme {
-    const val DEFAULT_SEED_COLOR = 0xFF415f76.toInt()
-    fun lightColorSchemeFromColor(color: Int = DEFAULT_SEED_COLOR): ColorScheme {
-        val lightScheme = Scheme.light(color)!!
-        return lightColorScheme(
-            primary = Color(lightScheme.primary),
-            onPrimary = Color(lightScheme.onPrimary),
-            primaryContainer = Color(lightScheme.primaryContainer),
-            onPrimaryContainer = Color(lightScheme.onPrimaryContainer),
-            secondary = Color(lightScheme.secondary),
-            onSecondary = Color(lightScheme.onSecondary),
-            secondaryContainer = Color(lightScheme.secondaryContainer),
-            onSecondaryContainer = Color(lightScheme.onSecondaryContainer),
-            tertiary = Color(lightScheme.tertiary),
-            onTertiary = Color(lightScheme.onTertiary),
-            tertiaryContainer = Color(lightScheme.tertiaryContainer),
-            onTertiaryContainer = Color(lightScheme.onTertiaryContainer),
-            error = Color(lightScheme.error),
-            errorContainer = Color(lightScheme.errorContainer),
-            onError = Color(lightScheme.onError),
-            onErrorContainer = Color(lightScheme.onErrorContainer),
-            background = Color(lightScheme.background),
-            onBackground = Color(lightScheme.onBackground),
-            surface = Color(lightScheme.surface),
-            onSurface = Color(lightScheme.onSurface),
-            surfaceVariant = Color(lightScheme.surfaceVariant),
-            onSurfaceVariant = Color(lightScheme.onSurfaceVariant),
-            outline = Color(lightScheme.outline),
-            inverseOnSurface = Color(lightScheme.inverseOnSurface),
-            inverseSurface = Color(lightScheme.inverseSurface),
-            inversePrimary = Color(lightScheme.inversePrimary),
-        )
-    }
+@Composable
+fun Number.autoDark(isDarkTheme: Boolean = LocalDarkTheme.current.isDarkTheme()): Double =
+    if (!isDarkTheme) this.toDouble()
+    else
+        when (this.toDouble()) {
+            6.0 -> 98.0
+            10.0 -> 99.0
+            20.0 -> 95.0
+            25.0 -> 90.0
+            30.0 -> 90.0
+            40.0 -> 80.0
+            50.0 -> 60.0
+            60.0 -> 50.0
+            70.0 -> 40.0
+            80.0 -> 40.0
+            90.0 -> 30.0
+            95.0 -> 20.0
+            98.0 -> 10.0
+            99.0 -> 10.0
+            100.0 -> 20.0
+            else -> this.toDouble()
+        }
 
-    fun darkColorSchemeFromColor(color: Int = DEFAULT_SEED_COLOR): ColorScheme {
-        val darkScheme = dark(color)!!
-        return darkColorScheme(
-            primary = Color(darkScheme.primary),
-            onPrimary = Color(darkScheme.onPrimary),
-            primaryContainer = Color(darkScheme.primaryContainer),
-            onPrimaryContainer = Color(darkScheme.onPrimaryContainer),
-            secondary = Color(darkScheme.secondary),
-            onSecondary = Color(darkScheme.onSecondary),
-            secondaryContainer = Color(darkScheme.secondaryContainer),
-            onSecondaryContainer = Color(darkScheme.onSecondaryContainer),
-            tertiary = Color(darkScheme.tertiary),
-            onTertiary = Color(darkScheme.onTertiary),
-            tertiaryContainer = Color(darkScheme.tertiaryContainer),
-            onTertiaryContainer = Color(darkScheme.onTertiaryContainer),
-            error = Color(darkScheme.error),
-            errorContainer = Color(darkScheme.errorContainer),
-            onError = Color(darkScheme.onError),
-            onErrorContainer = Color(darkScheme.onErrorContainer),
-            background = Color(darkScheme.background),
-            onBackground = Color(darkScheme.onBackground),
-            surface = Color(darkScheme.surface),
-            onSurface = Color(darkScheme.onSurface),
-            surfaceVariant = Color(darkScheme.surfaceVariant),
-            onSurfaceVariant = Color(darkScheme.onSurfaceVariant),
-            outline = Color(darkScheme.outline),
-            inverseOnSurface = Color(darkScheme.inverseOnSurface),
-            inverseSurface = Color(darkScheme.inverseSurface),
-            inversePrimary = Color(darkScheme.inversePrimary),
-        )
+@Deprecated(
+    message = "Deprecated",
+    replaceWith =
+        ReplaceWith(
+            "LocalFixedColorRoles.current",
+            imports = arrayOf("com.junkfood.seal.ui.common.LocalFixedColorRoles"),
+        ),
+)
+object FixedAccentColors {
+    val primaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.primaryFixed
+
+    val primaryFixedDim: Color
+        @Composable get() = LocalFixedColorRoles.current.primaryFixedDim
+
+    val onPrimaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.onPrimaryFixed
+
+    val onPrimaryFixedVariant: Color
+        @Composable get() = LocalFixedColorRoles.current.onPrimaryFixedVariant
+
+    val secondaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.secondaryFixed
+
+    val secondaryFixedDim: Color
+        @Composable get() = LocalFixedColorRoles.current.secondaryFixedDim
+
+    val onSecondaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.onSecondaryFixed
+
+    val onSecondaryFixedVariant: Color
+        @Composable get() = LocalFixedColorRoles.current.onSecondaryFixedVariant
+
+    val tertiaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.tertiaryFixed
+
+    val tertiaryFixedDim: Color
+        @Composable get() = LocalFixedColorRoles.current.tertiaryFixedDim
+
+    val onTertiaryFixed: Color
+        @Composable get() = LocalFixedColorRoles.current.onTertiaryFixed
+
+    val onTertiaryFixedVariant: Color
+        @Composable get() = LocalFixedColorRoles.current.onTertiaryFixedVariant
+}
+
+@Immutable
+data class FixedColorRoles(
+    val primaryFixed: Color,
+    val primaryFixedDim: Color,
+    val onPrimaryFixed: Color,
+    val onPrimaryFixedVariant: Color,
+    val secondaryFixed: Color,
+    val secondaryFixedDim: Color,
+    val onSecondaryFixed: Color,
+    val onSecondaryFixedVariant: Color,
+    val tertiaryFixed: Color,
+    val tertiaryFixedDim: Color,
+    val onTertiaryFixed: Color,
+    val onTertiaryFixedVariant: Color,
+) {
+    companion object {
+        internal val unspecified =
+            FixedColorRoles(
+                primaryFixed = Color.Unspecified,
+                primaryFixedDim = Color.Unspecified,
+                onPrimaryFixed = Color.Unspecified,
+                onPrimaryFixedVariant = Color.Unspecified,
+                secondaryFixed = Color.Unspecified,
+                secondaryFixedDim = Color.Unspecified,
+                onSecondaryFixed = Color.Unspecified,
+                onSecondaryFixedVariant = Color.Unspecified,
+                tertiaryFixed = Color.Unspecified,
+                tertiaryFixedDim = Color.Unspecified,
+                onTertiaryFixed = Color.Unspecified,
+                onTertiaryFixedVariant = Color.Unspecified,
+            )
+
+        @Stable
+        internal fun fromTonalPalettes(palettes: TonalPalettes): FixedColorRoles {
+            return with(palettes) {
+                FixedColorRoles(
+                    primaryFixed = accent1(90.toDouble()),
+                    primaryFixedDim = accent1(80.toDouble()),
+                    onPrimaryFixed = accent1(10.toDouble()),
+                    onPrimaryFixedVariant = accent1(30.toDouble()),
+                    secondaryFixed = accent2(90.toDouble()),
+                    secondaryFixedDim = accent2(80.toDouble()),
+                    onSecondaryFixed = accent2(10.toDouble()),
+                    onSecondaryFixedVariant = accent2(30.toDouble()),
+                    tertiaryFixed = accent3(90.toDouble()),
+                    tertiaryFixedDim = accent3(80.toDouble()),
+                    onTertiaryFixed = accent3(10.toDouble()),
+                    onTertiaryFixedVariant = accent3(30.toDouble()),
+                )
+            }
+        }
+
+        @Stable
+        internal fun fromColorSchemes(
+            lightColors: ColorScheme,
+            darkColors: ColorScheme,
+        ): FixedColorRoles {
+            return FixedColorRoles(
+                primaryFixed = lightColors.primaryContainer,
+                onPrimaryFixed = lightColors.onPrimaryContainer,
+                onPrimaryFixedVariant = darkColors.primaryContainer,
+                secondaryFixed = lightColors.secondaryContainer,
+                onSecondaryFixed = lightColors.onSecondaryContainer,
+                onSecondaryFixedVariant = darkColors.secondaryContainer,
+                tertiaryFixed = lightColors.tertiaryContainer,
+                onTertiaryFixed = lightColors.onTertiaryContainer,
+                onTertiaryFixedVariant = darkColors.tertiaryContainer,
+                primaryFixedDim = darkColors.primary,
+                secondaryFixedDim = darkColors.secondary,
+                tertiaryFixedDim = darkColors.tertiary,
+            )
+        }
     }
 }
+
+const val DEFAULT_SEED_COLOR = 0xa3d48d
+
+/**
+ * @return a [Color] generated using [Hct] algorithm, harmonized with `primary` color
+ * @receiver Seed number used for generating color
+ */
+@Composable
+@ReadOnlyComposable
+fun Int.generateLabelColor(): Color =
+    Color(Hct.from(hue = (this % 360).toDouble(), chroma = 36.0, tone = 80.0).toInt())
+        .harmonizeWithPrimary()
+
+/**
+ * @return a [Color] generated using [Hct] algorithm, harmonized with `primary` color
+ * @receiver Seed number used for generating color
+ */
+@Composable
+@ReadOnlyComposable
+fun Int.generateOnLabelColor(): Color =
+    Color(Hct.from(hue = (this % 360).toDouble(), chroma = 36.0, tone = 20.0).toInt())
+        .harmonizeWithPrimary()
+
+val ErrorTonalPalettes = Color.Red.toTonalPalettes()

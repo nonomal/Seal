@@ -1,259 +1,267 @@
 package com.junkfood.seal.ui.page.settings.about
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.Update
+import androidx.compose.material.icons.outlined.UpdateDisabled
+import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.UrlAnnotation
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
+import com.junkfood.seal.App
+import com.junkfood.seal.App.Companion.packageInfo
 import com.junkfood.seal.R
 import com.junkfood.seal.ui.component.BackButton
-import com.junkfood.seal.ui.component.DismissButton
-import com.junkfood.seal.ui.component.LargeTopAppBar
+import com.junkfood.seal.ui.component.ConfirmButton
 import com.junkfood.seal.ui.component.PreferenceItem
-import com.junkfood.seal.util.TextUtil
-import com.junkfood.seal.util.UpdateUtil
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
+import com.junkfood.seal.ui.component.PreferenceSwitchWithDivider
+import com.junkfood.seal.util.AUTO_UPDATE
+import com.junkfood.seal.util.PreferenceUtil
+import com.junkfood.seal.util.ToastUtil
 
 private const val releaseURL = "https://github.com/JunkFood02/Seal/releases"
 private const val repoUrl = "https://github.com/JunkFood02/Seal"
 const val weblate = "https://hosted.weblate.org/engage/seal/"
-private const val githubIssueUrl = "https://github.com/JunkFood02/Seal/issues/new/choose"
-
+const val YtdlpRepository = "https://github.com/yt-dlp/yt-dlp"
+private const val githubIssueUrl = "https://github.com/JunkFood02/Seal/issues"
+private const val telegramChannelUrl = "https://t.me/seal_app"
+private const val matrixSpaceUrl = "https://matrix.to/#/#seal-space:matrix.org"
+private const val githubSponsor = "https://github.com/sponsors/JunkFood02"
 private const val TAG = "AboutPage"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutPage(onBackPressed: () -> Unit, jumpToCreditsPage: () -> Unit) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        rememberTopAppBarState(),
-        canScroll = { true })
+fun AboutPage(
+    onNavigateBack: () -> Unit,
+    onNavigateToCreditsPage: () -> Unit,
+    onNavigateToUpdatePage: () -> Unit,
+    onNavigateToDonatePage: () -> Unit,
+) {
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+            rememberTopAppBarState(),
+            canScroll = { true },
+        )
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val configuration = LocalConfiguration.current
-    val screenDensity = configuration.densityDpi / 160f
-    val screenHeight = (configuration.screenHeightDp.toFloat() * screenDensity).roundToInt()
-    val screenWidth = (configuration.screenWidthDp.toFloat() * screenDensity).roundToInt()
-    var latestRelease by remember { mutableStateOf(UpdateUtil.LatestRelease()) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    var currentDownloadStatus by remember { mutableStateOf(UpdateUtil.DownloadStatus.NotYet as UpdateUtil.DownloadStatus) }
-    val scope = rememberCoroutineScope()
-    var updateJob: Job? = null
-    val settings =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            UpdateUtil.installLatestApk()
-        }
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { result ->
-        if (result) {
-            UpdateUtil.installLatestApk()
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (!context.packageManager.canRequestPackageInstalls())
-                    settings.launch(
-                        Intent(
-                            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                            Uri.parse("package:${context.packageName}"),
-                        )
-                    )
-                else
-                    UpdateUtil.installLatestApk()
-            }
-        }
-    }
+    //    val configuration = LocalConfiguration.current
+    //    val screenDensity = configuration.densityDpi / 160f
+    //    val screenHeight = (configuration.screenHeightDp.toFloat() * screenDensity).roundToInt()
+    //    val screenWidth = (configuration.screenWidthDp.toFloat() * screenDensity).roundToInt()
+    var isAutoUpdateEnabled by remember { mutableStateOf(PreferenceUtil.isAutoUpdateEnabled()) }
 
+    val info = App.getVersionReport()
+    val versionName = packageInfo.versionName
 
-    val info = if (Build.VERSION.SDK_INT >= 33) context.packageManager.getPackageInfo(
-        context.packageName, PackageManager.PackageInfoFlags.of(0)
-    )
-    else context.packageManager.getPackageInfo(context.packageName, 0)
+    //        infoBuilder.append("App version: $versionName ($versionCode)\n")
+    //            .append("Device information: Android $release (API ${Build.VERSION.SDK_INT})\n")
+    //            .append("Supported ABIs: ${Build.SUPPORTED_ABIS.contentToString()}\n")
+    //            .append("\nScreen resolution: $screenHeight x $screenWidth")
+    //            .append("Yt-dlp Version:
+    // ${YoutubeDL.version(context.applicationContext)}").toString()
 
-    val versionName = info.versionName
-
-    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        info.longVersionCode
-    } else {
-        info.versionCode.toLong()
-    }
-    val release = if (Build.VERSION.SDK_INT >= 30) {
-        Build.VERSION.RELEASE_OR_CODENAME
-    } else {
-        Build.VERSION.RELEASE
-    }
-
-    val infoBuilder = StringBuilder()
-    val deviceInformation =
-        infoBuilder.append("App version: $versionName")
-            .append(" ($versionCode)\n")
-            .append("Device information: Android $release (API ${Build.VERSION.SDK_INT})\n")
-            .append(Build.SUPPORTED_ABIS.contentToString())
-            .append("\nScreen resolution: $screenHeight x $screenWidth").toString()
     val uriHandler = LocalUriHandler.current
     fun openUrl(url: String) {
         uriHandler.openUri(url)
     }
-    Scaffold(modifier = Modifier
-        .fillMaxSize()
-        .nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
-        LargeTopAppBar(title = {
-            Text(
-                modifier = Modifier.padding(start = 8.dp),
-                text = stringResource(id = R.string.about),
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(modifier = Modifier, text = stringResource(id = R.string.about)) },
+                navigationIcon = { BackButton { onNavigateBack() } },
+                scrollBehavior = scrollBehavior,
             )
-        }, navigationIcon = {
-            BackButton(modifier = Modifier.padding(start = 8.dp)) {
-                onBackPressed()
-            }
-        }, scrollBehavior = scrollBehavior
-        )
-    }, content = {
-        LazyColumn(modifier = Modifier.padding(it)) {
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.readme),
-                    description = stringResource(R.string.readme_desc),
-                    icon = Icons.Outlined.Description,
-                ) { openUrl(repoUrl) }
-            }
-            if (!versionName.contains("F-Droid"))
+        },
+        content = {
+            LazyColumn(modifier = Modifier.padding(it)) {
                 item {
                     PreferenceItem(
-                        title = stringResource(R.string.check_for_updates),
-                        description = stringResource(R.string.check_for_updates_desc),
-                        icon = Icons.Outlined.Update
+                        title = stringResource(R.string.readme),
+                        description = stringResource(R.string.readme_desc),
+                        icon = Icons.Outlined.Description,
                     ) {
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                val temp = UpdateUtil.checkForUpdate()
-                                if (temp == null) {
-                                    TextUtil.makeToastSuspend(context.getString(R.string.app_up_to_date))
-                                } else {
-                                    latestRelease = temp
-                                    showUpdateDialog = true
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                TextUtil.makeToastSuspend(context.getString(R.string.app_update_failed))
-                                return@launch
-                            }
-
-                        }
+                        openUrl(repoUrl)
                     }
                 }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.release),
-                    description = stringResource(R.string.release_desc),
-                    icon = Icons.Outlined.NewReleases,
-                ) { openUrl(releaseURL) }
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.github_issue),
-                    description = stringResource(R.string.github_issue_desc),
-                    icon = Icons.Outlined.ContactSupport,
-                ) { openUrl(githubIssueUrl) }
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(id = R.string.credits),
-                    description = stringResource(id = R.string.credits_desc),
-                    icon = Icons.Outlined.AutoAwesome,
-                ) { jumpToCreditsPage() }
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.translate),
-                    description = stringResource(R.string.translate_desc),
-                    icon = Icons.Outlined.Translate
-                ) { openUrl(weblate) }
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.version),
-                    description = versionName,
-                    icon = Icons.Outlined.Info,
-                ) {
-                    clipboardManager.setText(AnnotatedString(deviceInformation))
-                    TextUtil.makeToast(R.string.info_copied)
-                }
-            }
-        }
-    })
-    if (showUpdateDialog) {
-        UpdateDialog(
-            onDismissRequest = {
-                showUpdateDialog = false
-                updateJob?.cancel()
-            },
-            title = latestRelease.name.toString(),
-            onConfirmUpdate = {
-                updateJob = scope.launch(Dispatchers.IO) {
-                    kotlin.runCatching {
-                        UpdateUtil.downloadApk(latestRelease = latestRelease)
-                            .collect { downloadStatus ->
-                                currentDownloadStatus = downloadStatus
-                                if (downloadStatus is UpdateUtil.DownloadStatus.Finished) {
-                                    launcher.launch(Manifest.permission.REQUEST_INSTALL_PACKAGES)
-                                }
-                            }
-                    }.onFailure {
-                        it.printStackTrace()
-                        currentDownloadStatus = UpdateUtil.DownloadStatus.NotYet
-                        TextUtil.makeToastSuspend(context.getString(R.string.app_update_failed))
+                item {
+                    PreferenceItem(
+                        title = stringResource(R.string.release),
+                        description = stringResource(R.string.release_desc),
+                        icon = Icons.Outlined.NewReleases,
+                    ) {
+                        openUrl(releaseURL)
                     }
                 }
-            },
-            releaseNote = latestRelease.body.toString(),
-            downloadStatus = currentDownloadStatus
-        )
-    }
+                /*            item {
+                    PreferenceItem(
+                        title = stringResource(R.string.github_issue),
+                        description = stringResource(R.string.github_issue_desc),
+                        icon = Icons.Outlined.ContactSupport,
+                    ) { openUrl(githubIssueUrl) }
+                }*/
+                item {
+                    PreferenceItem(
+                        title = stringResource(id = R.string.sponsor),
+                        description = stringResource(id = R.string.sponsor_desc),
+                        icon = Icons.Outlined.VolunteerActivism,
+                    ) {
+                        //                    openUrl(githubSponsor)
+                        onNavigateToDonatePage()
+                    }
+                }
+                item {
+                    PreferenceItem(
+                        title = stringResource(R.string.telegram_channel),
+                        description = telegramChannelUrl,
+                        icon = painterResource(id = R.drawable.icons8_telegram_app),
+                    ) {
+                        openUrl(telegramChannelUrl)
+                    }
+                }
+                item {
+                    PreferenceItem(
+                        title = stringResource(R.string.matrix_space),
+                        description = matrixSpaceUrl,
+                        icon = painterResource(id = R.drawable.icons8_matrix),
+                    ) {
+                        openUrl(matrixSpaceUrl)
+                    }
+                }
+                item {
+                    PreferenceItem(
+                        title = stringResource(id = R.string.credits),
+                        description = stringResource(id = R.string.credits_desc),
+                        icon = Icons.Outlined.AutoAwesome,
+                    ) {
+                        onNavigateToCreditsPage()
+                    }
+                }
+                item {
+                    PreferenceSwitchWithDivider(
+                        title = stringResource(R.string.auto_update),
+                        description = stringResource(R.string.check_for_updates_desc),
+                        icon =
+                            if (isAutoUpdateEnabled) Icons.Outlined.Update
+                            else Icons.Outlined.UpdateDisabled,
+                        isChecked = isAutoUpdateEnabled,
+                        isSwitchEnabled = !App.isFDroidBuild(),
+                        onClick = onNavigateToUpdatePage,
+                        onChecked = {
+                            isAutoUpdateEnabled = !isAutoUpdateEnabled
+                            PreferenceUtil.updateValue(AUTO_UPDATE, isAutoUpdateEnabled)
+                        },
+                    )
+                }
+                item {
+                    PreferenceItem(
+                        title = stringResource(R.string.version),
+                        description = versionName,
+                        icon = Icons.Outlined.Info,
+                    ) {
+                        clipboardManager.setText(AnnotatedString(info))
+                        ToastUtil.makeToast(R.string.info_copied)
+                    }
+                }
+                item {
+                    PreferenceItem(title = "Package name", description = context.packageName) {
+                        clipboardManager.setText(AnnotatedString(context.packageName))
+                        ToastUtil.makeToast(R.string.info_copied)
+                    }
+                }
+            }
+        },
+    )
 }
 
-
+@OptIn(ExperimentalTextApi::class)
 @Composable
-fun UpdateDialog(
-    onDismissRequest: () -> Unit,
-    title: String,
-    onConfirmUpdate: () -> Unit,
-    releaseNote: String,
-    downloadStatus: UpdateUtil.DownloadStatus
-) {
+@Preview
+fun AutoUpdateUnavailableDialog(onDismissRequest: () -> Unit = {}) {
+    val uriHandler = LocalUriHandler.current
+    val hapticFeedback = LocalHapticFeedback.current
+    val hyperLinkText = stringResource(id = R.string.switch_to_github_builds)
+    val text = stringResource(id = R.string.auto_update_disabled_msg, "F-Droid", hyperLinkText)
+
+    val annotatedString = buildAnnotatedString {
+        append(text)
+        val startIndex = text.indexOf(hyperLinkText)
+        val endIndex = startIndex + hyperLinkText.length
+        addUrlAnnotation(
+            UrlAnnotation("https://github.com/JunkFood02/Seal/releases/latest"),
+            start = startIndex,
+            end = endIndex,
+        )
+        addStyle(
+            SpanStyle(
+                color = MaterialTheme.colorScheme.tertiary,
+                textDecoration = TextDecoration.Underline,
+            ),
+            start = startIndex,
+            end = endIndex,
+        )
+    }
     AlertDialog(
-        onDismissRequest = {},
-        title = { Text(title) },
-        icon = { Icon(Icons.Outlined.NewReleases, null) }, confirmButton = {
-            TextButton(onClick = { if (downloadStatus !is UpdateUtil.DownloadStatus.Progress) onConfirmUpdate() }) {
-                when (downloadStatus) {
-                    is UpdateUtil.DownloadStatus.Progress -> Text("${downloadStatus.percent} %")
-                    else -> Text(stringResource(R.string.update))
-                }
-            }
-        }, dismissButton = {
-            DismissButton { onDismissRequest() }
-        }, text = {
-            Text(releaseNote)
-        })
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            ConfirmButton(stringResource(id = R.string.got_it)) { onDismissRequest() }
+        },
+        icon = { Icon(Icons.Outlined.UpdateDisabled, null) },
+        title = {
+            Text(
+                text = stringResource(id = R.string.feature_unavailable),
+                textAlign = TextAlign.Center,
+            )
+        },
+        text = {
+            ClickableText(
+                text = annotatedString,
+                onClick = { index ->
+                    annotatedString.getUrlAnnotations(index, index).firstOrNull()?.let {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        uriHandler.openUri(it.item.url)
+                    }
+                },
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+            )
+        },
+    )
 }

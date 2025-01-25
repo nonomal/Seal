@@ -1,132 +1,89 @@
 package com.junkfood.seal
 
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
-import android.util.Log
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.core.os.LocaleListCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import com.junkfood.seal.BaseApplication.Companion.context
+import com.junkfood.seal.App.Companion.context
 import com.junkfood.seal.ui.common.LocalDarkTheme
-import com.junkfood.seal.ui.common.LocalSeedColor
 import com.junkfood.seal.ui.common.SettingsProvider
-import com.junkfood.seal.ui.page.HomeEntry
-import com.junkfood.seal.ui.page.download.DownloadViewModel
+import com.junkfood.seal.ui.page.AppEntry
+import com.junkfood.seal.ui.page.downloadv2.configure.DownloadDialogViewModel
 import com.junkfood.seal.ui.theme.SealTheme
 import com.junkfood.seal.util.PreferenceUtil
-import com.junkfood.seal.util.TextUtil
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.junkfood.seal.util.matchUrlFromSharedText
+import com.junkfood.seal.util.setLanguage
 import kotlinx.coroutines.runBlocking
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.compose.KoinContext
 
-@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    private val downloadViewModel: DownloadViewModel by viewModels()
+    private val dialogViewModel: DownloadDialogViewModel by viewModel()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, insets ->
-            v.setPadding(0, 0, 0, 0)
-            insets
+
+        if (Build.VERSION.SDK_INT < 33) {
+            runBlocking { setLanguage(PreferenceUtil.getLocaleFromPreference()) }
         }
-        runBlocking {
-            if (Build.VERSION.SDK_INT < 33)
-                AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.forLanguageTags(PreferenceUtil.getLanguageConfiguration())
-                )
-        }
+        enableEdgeToEdge()
+
         context = this.baseContext
         setContent {
-            val windowSizeClass = calculateWindowSizeClass(this)
-            SettingsProvider(windowSizeClass.widthSizeClass) {
-                val darkTheme = LocalDarkTheme.current.isDarkTheme()
-                SealTheme(
-                    darkTheme = darkTheme,
-                    seedColor = LocalSeedColor.current
-                ) {
-                    HomeEntry(downloadViewModel)
+            KoinContext {
+                val windowSizeClass = calculateWindowSizeClass(this)
+                SettingsProvider(windowWidthSizeClass = windowSizeClass.widthSizeClass) {
+                    SealTheme(
+                        darkTheme = LocalDarkTheme.current.isDarkTheme(),
+                        isHighContrastModeEnabled = LocalDarkTheme.current.isHighContrastModeEnabled,
+                    ) {
+                        AppEntry(dialogViewModel = dialogViewModel)
+                    }
                 }
             }
         }
-        handleShareIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        intent?.let { handleShareIntent(it) }
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        val url = intent.getSharedURL()
+        if (url != null) {
+            dialogViewModel.postAction(DownloadDialogViewModel.Action.ShowSheet(listOf(url)))
+        }
     }
 
-    private fun handleShareIntent(intent: Intent) {
-        Log.d(TAG, "handleShareIntent: $intent")
-        if (Intent.ACTION_SEND == intent.action)
-            intent.getStringExtra(Intent.EXTRA_TEXT)
-                ?.let { it ->
-                    TextUtil.matchUrlFromSharedText(it)
-                        ?.let { it1 ->
-                            if (sharedUrl != it1) {
-                                sharedUrl = it1
-                                downloadViewModel.updateUrl(sharedUrl)
-                            }
+    private fun Intent.getSharedURL(): String? {
+        val intent = this
+
+        return when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                intent.dataString
+            }
+
+            Intent.ACTION_SEND -> {
+                intent.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedContent ->
+                    intent.removeExtra(Intent.EXTRA_TEXT)
+                    matchUrlFromSharedText(sharedContent).also { matchedUrl ->
+                        if (sharedUrlCached != matchedUrl) {
+                            sharedUrlCached = matchedUrl
                         }
+                    }
                 }
+            }
+
+            else -> {
+                null
+            }
+        }
     }
 
     companion object {
         private const val TAG = "MainActivity"
-        private var sharedUrl = ""
-        var isServiceRunning = false
-        private val connection = object : ServiceConnection {
-            override fun onServiceConnected(className: ComponentName, service: IBinder) {
-                val binder = service as DownloadService.DownloadServiceBinder
-                isServiceRunning = true
-            }
-
-            override fun onServiceDisconnected(arg0: ComponentName) {
-            }
-        }
-
-        fun startService() {
-            if (isServiceRunning) return
-            Intent(context, DownloadService::class.java).also { intent ->
-                context.applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            }
-        }
-
-        fun stopService() {
-            if (!isServiceRunning) return
-            context.applicationContext.unbindService(connection)
-            isServiceRunning = false
-        }
-
-        fun setLanguage(locale: String) {
-            Log.d(TAG, "setLanguage: $locale")
-            val localeListCompat =
-                if (locale.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                else LocaleListCompat.forLanguageTags(locale)
-            BaseApplication.applicationScope.launch(Dispatchers.Main) {
-                AppCompatDelegate.setApplicationLocales(localeListCompat)
-            }
-        }
-
+        private var sharedUrlCached = ""
     }
-
 }
-
-
-
-
-

@@ -1,43 +1,35 @@
+@file:OptIn(ExperimentalTextApi::class, ExperimentalTextApi::class, ExperimentalTextApi::class)
+
 package com.junkfood.seal.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextDirection
 
-// Set of Material typography styles to start with
-val Typography = Typography()
-/*        bodyLarge = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 16.sp
-        ), bodyMedium = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 14.sp
-        ), bodySmall = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 12.sp
-        ), titleLarge = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 22.sp
-        ), titleMedium = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp
-        ), titleSmall = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp
-        */
-        /* Other default text styles to override
-        button = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.W500,
-            fontSize = 14.sp
-        ),
-        caption = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 12.sp
+val Typography =
+    Typography().run {
+        copy(
+            bodyLarge = bodyLarge.applyLinebreak().applyTextDirection(),
+            bodyMedium = bodyMedium.applyLinebreak().applyTextDirection(),
+            bodySmall = bodySmall.applyLinebreak().applyTextDirection(),
+            titleLarge = titleLarge.applyTextDirection(),
+            titleMedium = titleMedium.applyTextDirection(),
+            titleSmall = titleSmall.applyTextDirection(),
+            headlineSmall = headlineSmall.applyTextDirection(),
+            headlineMedium = headlineMedium.applyTextDirection(),
+            headlineLarge = headlineLarge.applyTextDirection(),
+            displaySmall = displaySmall.applyTextDirection(),
+            displayMedium = displayMedium.applyTextDirection(),
+            displayLarge = displayLarge.applyTextDirection(),
+            labelLarge = labelLarge.applyTextDirection(),
+            labelMedium = labelMedium.applyTextDirection(),
+            labelSmall = labelSmall.applyTextDirection(),
         )
-        */
+    }
+
+private fun TextStyle.applyLinebreak(): TextStyle = this.copy(lineBreak = LineBreak.Paragraph)
+
+private fun TextStyle.applyTextDirection(): TextStyle =
+    this.copy(textDirection = TextDirection.Content)
